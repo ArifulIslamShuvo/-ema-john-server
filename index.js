@@ -21,17 +21,28 @@ async function run() {
 
     //http://localhost:5000/product
     app.get('/product', async (req, res) => {
+        console.log('query', req.query);
+        const page = parseInt(req.query.page);
+        const size = parseInt(req.query.size);
         const query = {};
         const cursor = productCollection.find(query);
-        const product = await cursor.toArray();
-        res.send(product)
+
+        let products;
+        if(page || size){
+        // 0 --> skip: 0 get: 0-10(10)
+        // 1 --> skip: 1*10 get: 11-20(10)
+        // 2 --> skip: 2*10 get: 21-30(10)
+         products = await cursor.skip(page*size).limit(size).toArray();
+        }
+        else{
+        products = await cursor.toArray();
+        }
+        res.send(products)
     })
 
     //http://localhost:5000/productCount
     app.get('/productCount', async(req, res) => {
-        const query = {};
-        const cursor = productCollection.find(query);
-        const count = await cursor.count();
+        const count = await productCollection.estimatedDocumentCount();
         res.send({count});
     })
   } finally {
